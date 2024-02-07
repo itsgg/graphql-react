@@ -1,11 +1,19 @@
 import { useState } from 'react';
-import { useQuery, gql } from '@apollo/client';
+import { useQuery, useMutation, gql } from '@apollo/client';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import './App.scss';
 
 const TEST_QUERY = gql`
   query {
     hello
+  }
+`;
+
+const UPDATE_MESSAGE = gql`
+  mutation updateMessage($message: String!) {
+    updateMessage(message: $message) {
+      message
+    }
   }
 `;
 
@@ -25,8 +33,20 @@ function App() {
     },
   ];
 
+  const { loading, error, data } = useQuery(TEST_QUERY);
+  const [
+    updateMessage,
+    { loading: updateLoading, error: updateError, data: updateData },
+  ] = useMutation(UPDATE_MESSAGE);
+  
+
   const onSubmit = (event) => {
     setTaskList([...taskList, { id: taskList.length + 1, name: taskName }]);
+    updateMessage({ variables: { message: taskName } });
+    console.log('##########');
+    console.log(updateData);
+    console.log('##########');
+
     console.log(taskList);
     event.preventDefault();
     console.log('Form submitted');
@@ -39,8 +59,6 @@ function App() {
   const [taskName, setTaskName] = useState('');
   const [taskList, setTaskList] = useState(tasks);
 
-  const { loading, error, data } = useQuery(TEST_QUERY);
-
   return (
     <HelmetProvider>
       <div className="App">
@@ -48,7 +66,9 @@ function App() {
           <title>{taskName}</title>
         </Helmet>
         <h1>Hello</h1>
-
+        {updateLoading && <p>Updating...</p>}
+        {updateError && <p>Error: {updateError.message}</p>}
+        {updateData && <p>{updateData.updateMessage.message}</p>}
         {loading && <p>Loading...</p>}
         {error && <p>Error: {error.message}</p>}
         {data && <p>{data.hello}</p>}
